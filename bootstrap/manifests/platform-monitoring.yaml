@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata: 
+  name: platform-monitoring
+  namespace: argocd
+spec:
+  source:
+    repoURL: 'https://prometheus-community.github.io/helm-charts'
+    targetRevision: 92.2.0
+    chart: kube-prometheus-stack
+    helm:
+      releaseName: prometheus-monitoring
+      valuesObject:
+        kubeScheduler:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+        kubeControllerManager: 
+          enabled: false
+        kubeProxy:
+          enabled: false
+
+        prometheus:
+          prometheusSpec:
+            retention: 24h
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+
+        grafana:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        
+        alertManager:
+          enabled: false
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+  project: default
